@@ -1,21 +1,49 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
-</div>
+# 📻 Discovery FM - Радио и Подкасты
 
-# Run and deploy your AI Studio app
+[![Version](https://img.shields.io/badge/version-1.0b6-blue.svg)](https://github.com/DgekStr/discovery-fm-android)
+[![Platform](https://img.shields.io/badge/platform-Android-green.svg)](https://www.android.com/)
+[![Kotlin](https://img.shields.io/badge/Kotlin-2.0.0-purple.svg)](https://kotlinlang.org/)
 
-This contains everything you need to run your app locally.
+Приложение для прослушивания онлайн-радио и подкастов Discovery FM.
 
-View your app in AI Studio: https://ai.studio/apps/9ed951a2-1b83-42ea-b432-6e437ad8ae8d
+---
 
-## Run Locally
+## 📱 Особенности
 
-**Prerequisites:**  [Android Studio](https://developer.android.com/studio)
+- 🎵 **Онлайн радио** - Слушайте эфир в реальном времени
+- 📚 **Категории подкастов** - Удобная навигация по подкастам
+- 🎧 **Воспроизведение подкастов** - С управлением прогрессом
+- 🎨 **Современный UI** - На основе Jetpack Compose
+- 📊 **Управление громкостью** - Ползунок громкости в плеере
 
+---
 
-1. Open Android Studio
-2. Select **Open** and choose the directory containing this project
-3. Allow Android Studio to fix any incompatibilities as it imports the project.
-4. Create a file named `.env` in the project directory and set `GEMINI_API_KEY` in that file to your Gemini API key (see `.env.example` for an example)
-5. Remove this line from the app's `build.gradle.kts` file: `signingConfig = signingConfigs.getByName("debugConfig")`
-6. Run the app on an emulator or physical device
+## 🖼️ Скриншоты
+
+*Добавьте скриншоты приложения здесь*
+
+---
+
+## 🛠️ Технологии
+
+- **Kotlin** - Основной язык
+- **Jetpack Compose** - Современный UI
+- **Retrofit** - HTTP клиент
+- **Coil** - Загрузка изображений
+- **Coroutines** - Асинхронность
+- **ViewModel** - Управление состоянием
+
+---
+
+## 📦 Установка
+
+### Требования:
+- Android Studio Hedgehog или новее
+- Android SDK 24+
+- Git
+
+### Шаги:
+
+1. Клонируйте репозиторий:
+```bash
+git clone https://github.com/DgekStr/discovery-fm-android.git
