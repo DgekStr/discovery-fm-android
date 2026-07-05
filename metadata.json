@@ -1,0 +1,6 @@
+{
+  "name": "Discovery FM",
+  "description": "Radio player and shows browser for Discovery FM with real-time web parsing.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

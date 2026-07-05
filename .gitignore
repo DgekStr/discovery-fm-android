@@ -1,0 +1,41 @@
+# Android
+*.iml
+.gradle/
+/local.properties
+/.idea/
+.DS_Store
+/build/
+/captures/
+.externalNativeBuild/
+.cxx/
+*.apk
+*.ap_
+*.aab
+*.dex
+*.class
+*.log
+
+# Keystore files
+*.jks
+*.keystore
+*.key
+
+# Secrets
+.env
+.env.example
+
+# Test
+src/test/screenshots/
+build/test-screenshots/
+
+# Android Studio
+.idea/
+*.iws
+*.ipr
+out/
+.user
+.vscode/
+
+# Gradle
+gradle/wrapper/gradle-wrapper.jar
+!gradle/wrapper/gradle-wrapper.jar
