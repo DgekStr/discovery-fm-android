@@ -3,8 +3,8 @@ plugins {
   alias(libs.plugins.kotlin.android)
   alias(libs.plugins.kotlin.compose)
   alias(libs.plugins.google.devtools.ksp)
-  // alias(libs.plugins.secrets)              // УДАЛЕНО — не используется
-  // alias(libs.plugins.google.services)      // УДАЛЕНО — не используется
+  // alias(libs.plugins.secrets)              // УДАЛЕНО
+  // alias(libs.plugins.google.services)      // УДАЛЕНО
   alias(libs.plugins.roborazzi)
 }
 
@@ -26,9 +26,10 @@ android {
     create("release") {
       val keystorePath = System.getenv("KEYSTORE_PATH") ?: "${rootDir}/my-upload-key.jks"
       storeFile = file(keystorePath)
-      storePassword = System.getenv("STORE_PASSWORD")
+      // Берём пароли из gradle.properties (через project.properties)
+      storePassword = project.properties["STORE_PASSWORD"] as? String ?: System.getenv("STORE_PASSWORD")
       keyAlias = "upload"
-      keyPassword = System.getenv("KEY_PASSWORD")
+      keyPassword = project.properties["KEY_PASSWORD"] as? String ?: System.getenv("KEY_PASSWORD")
     }
     create("debugConfig") {
       storeFile = file(System.getProperty("user.home") + "/.android/debug.keystore")
@@ -70,10 +71,6 @@ android {
     }
   }
 }
-
-// ========== УДАЛЕНЫ БЛОКИ secrets И googleServices ==========
-// secrets { ... }   // УДАЛЕНО
-// googleServices { ... }   // УДАЛЕНО
 
 dependencies {
   implementation(platform(libs.androidx.compose.bom))
@@ -117,8 +114,8 @@ dependencies {
   implementation(libs.jsoup)
 
   // === FIREBASE — УДАЛЕНО ===
-  // implementation(libs.firebase.ai)                    // УДАЛЕНО
-  // implementation(libs.firebase.appcheck.recaptcha)   // УДАЛЕНО
+  // implementation(libs.firebase.ai)
+  // implementation(libs.firebase.appcheck.recaptcha)
 
   // === ТЕСТЫ ===
   testImplementation(libs.junit)
