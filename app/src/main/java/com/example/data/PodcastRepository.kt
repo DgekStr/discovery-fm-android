@@ -9,13 +9,16 @@ import org.json.JSONObject
 import java.net.URL
 
 class PodcastRepository {
-
     private val apiUrl = "https://discoveryfm.ru/xml/podcast_api.php"
 
     suspend fun fetchPodcasts(): List<Category> {
         return withContext(Dispatchers.IO) {
             try {
-                val jsonString = URL(apiUrl).readText()
+                val jsonString = URL(apiUrl)
+                    .openConnection()
+                    .getInputStream()
+                    .bufferedReader(Charsets.UTF_8)
+                    .use { it.readText() }
                 val jsonObject = JSONObject(jsonString)
 
                 if (!jsonObject.getBoolean("success")) {
@@ -102,7 +105,10 @@ class PodcastRepository {
                             imageUrl = "https://discoveryfm.ru/$cleanPath"
                         }
 
-                        android.util.Log.d("PodcastRepo", "  📦 Подкаст: ${item.getString("title")}")
+                        android.util.Log.d(
+                            "PodcastRepo",
+                            "  📦 Подкаст: ${item.getString("title")}"
+                        )
                         android.util.Log.d("PodcastRepo", "  🖼️ imageUrl: $imageUrl")
 
                         shows.add(

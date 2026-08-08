@@ -1,4 +1,4 @@
-package com.example.ui
+﻿package com.example.ui
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -23,7 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.model.Show
-import com.example.R
+import ru.discoveryfm.player.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
