@@ -6,11 +6,13 @@ import androidx.lifecycle.viewModelScope
 import com.example.data.NowPlayingInfo
 import com.example.data.NowPlayingRepository
 import com.example.data.PodcastRepository
+import com.example.data.ThemePreferences
 import com.example.model.Category
 import com.example.model.Show
 import com.example.player.PlayerManager
 import com.example.player.PlayerPlaybackState
 import com.example.player.PodcastPlayerManager
+import com.example.ui.theme.ThemeMode
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -30,6 +32,11 @@ class DiscoveryViewModel(application: Application) : AndroidViewModel(applicatio
     private val nowPlayingRepository = NowPlayingRepository()
     private val podcastRepository = PodcastRepository()
     private val podcastPlayerManager = PodcastPlayerManager(application)
+    private val themePreferences = ThemePreferences(application)
+
+    // === ТЕМА ===
+    private val _themeMode = MutableStateFlow(ThemeMode.SYSTEM)
+    val themeMode: StateFlow<ThemeMode> = _themeMode.asStateFlow()
 
     // === РАДИО-ПЛЕЕР ===
     private val _nowPlayingInfo = MutableStateFlow<NowPlayingInfo?>(null)
@@ -60,6 +67,13 @@ class DiscoveryViewModel(application: Application) : AndroidViewModel(applicatio
     private var isManualPause = false
 
     init {
+        // Загружаем сохранённый режим темы из DataStore
+        viewModelScope.launch {
+            themePreferences.themeMode.collect { mode ->
+                _themeMode.value = mode
+            }
+        }
+
         loadPodcasts()
         fetchAndDisplayNowPlaying()
 
@@ -272,6 +286,14 @@ class DiscoveryViewModel(application: Application) : AndroidViewModel(applicatio
 
     fun setVolume(volume: Float) {
         playerManager.setVolume(volume)
+    }
+
+    // === УПРАВЛЕНИЕ ТЕМОЙ ===
+    fun setThemeMode(mode: ThemeMode) {
+        _themeMode.value = mode
+        viewModelScope.launch {
+            themePreferences.setThemeMode(mode)
+        }
     }
 
     override fun onCleared() {

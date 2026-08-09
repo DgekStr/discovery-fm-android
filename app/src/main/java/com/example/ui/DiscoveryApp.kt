@@ -37,6 +37,7 @@ import ru.discoveryfm.player.R
 import com.example.model.Category
 import com.example.model.Show
 import com.example.player.PlayerPlaybackState
+import com.example.ui.theme.ThemeMode
 import com.example.viewmodel.DiscoveryViewModel
 import com.example.viewmodel.PodcastLoadState
 import kotlinx.coroutines.delay
@@ -56,6 +57,7 @@ fun DiscoveryApp(
     val currentPodcastTitle by viewModel.currentPodcastTitle.collectAsState()
     val podcastCurrentPosition by viewModel.podcastCurrentPosition.collectAsState()
     val podcastDuration by viewModel.podcastDuration.collectAsState()
+    val themeMode by viewModel.themeMode.collectAsState()
 
     var selectedCategory by remember { mutableStateOf<Category?>(null) }
     var selectedPodcast by remember { mutableStateOf<Show?>(null) }
@@ -160,6 +162,8 @@ fun DiscoveryApp(
                     viewModel.loadPodcasts()
                     viewModel.fetchAndDisplayNowPlaying()
                 },
+                themeMode = themeMode,
+                onThemeModeChange = { viewModel.setThemeMode(it) },
                 isLoading = podcastState is PodcastLoadState.Loading
             )
         },
@@ -382,8 +386,32 @@ fun StatusCard(
 @Composable
 fun YouTubeStyleHeader(
     onRefreshClick: () -> Unit,
+    themeMode: ThemeMode,
+    onThemeModeChange: (ThemeMode) -> Unit,
     isLoading: Boolean
 ) {
+    // Следующий режим при нажатии: Системная → Светлая → Тёмная → Системная
+    val nextThemeMode =
+        when (themeMode) {
+            ThemeMode.SYSTEM -> ThemeMode.LIGHT
+            ThemeMode.LIGHT -> ThemeMode.DARK
+            ThemeMode.DARK -> ThemeMode.SYSTEM
+        }
+
+    val themeIcon =
+        when (themeMode) {
+            ThemeMode.SYSTEM -> Icons.Rounded.BrightnessAuto
+            ThemeMode.LIGHT -> Icons.Rounded.LightMode
+            ThemeMode.DARK -> Icons.Rounded.DarkMode
+        }
+
+    val themeDescription =
+        when (themeMode) {
+            ThemeMode.SYSTEM -> "Тема: системная"
+            ThemeMode.LIGHT -> "Тема: светлая"
+            ThemeMode.DARK -> "Тема: тёмная"
+        }
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -428,6 +456,19 @@ fun YouTubeStyleHeader(
                     fontSize = 12.sp
                 )
             }
+        }
+
+        IconButton(
+            onClick = { onThemeModeChange(nextThemeMode) },
+            modifier = Modifier
+                .testTag("theme_button")
+                .minimumInteractiveComponentSize()
+        ) {
+            Icon(
+                imageVector = themeIcon,
+                contentDescription = themeDescription,
+                tint = Color.White
+            )
         }
 
         IconButton(
