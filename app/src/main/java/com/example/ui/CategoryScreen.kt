@@ -227,9 +227,11 @@ fun PodcastItemCard(
 
                 // Статус воспроизведения
                 Row(
+                    modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
+                    // Левая часть: статус
                     if (isPlaying) {
                         Icon(
                             imageVector = Icons.Rounded.PlayArrow,
@@ -257,8 +259,48 @@ fun PodcastItemCard(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
+
+                    // Правая часть: длительность ролика
+                    if (show.duration > 0) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.Schedule,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(14.dp)
+                            )
+                            Text(
+                                text = formatPodcastDuration(show.duration),
+                                fontSize = 11.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
                 }
             }
         }
+    }
+}
+
+/**
+ * Форматирует длительность (в секундах) в компактный вид "Ч:ММ:СС" или "М:СС".
+ * Примеры: 65 → "1:05",  3661 → "1:01:01".
+ */
+private fun formatPodcastDuration(totalSeconds: Int): String {
+    if (totalSeconds <= 0) return "00:00"
+    val hours = totalSeconds / 3600
+    val minutes = (totalSeconds % 3600) / 60
+    val seconds = totalSeconds % 60
+
+    val mm = minutes.toString().padStart(2, '0')
+    val ss = seconds.toString().padStart(2, '0')
+    return if (hours > 0) {
+        "$hours:$mm:$ss"
+    } else {
+        "$minutes:$ss"
     }
 }
