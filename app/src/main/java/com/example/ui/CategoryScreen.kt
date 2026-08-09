@@ -21,6 +21,10 @@ import androidx.compose.ui.unit.sp
 import com.example.model.Category
 import com.example.model.Show
 import com.example.player.PlayerPlaybackState
+import coil.compose.AsyncImage
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import ru.discoveryfm.player.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -105,6 +109,7 @@ fun CategoryScreen(
             ) { show ->
                 PodcastItemCard(
                     show = show,
+                    fallbackImageUrl = category.imageUrl,
                     isPlaying = podcastIsPlaying && currentPodcastTitle == show.title,
                     isLoading = podcastIsLoading,
                     onPlayPauseToggle = { onPlayPauseToggle(show) },
@@ -120,6 +125,7 @@ fun CategoryScreen(
 @Composable
 fun PodcastItemCard(
     show: Show,
+    fallbackImageUrl: String = "",
     isPlaying: Boolean,
     isLoading: Boolean,
     onPlayPauseToggle: () -> Unit,
@@ -144,7 +150,9 @@ fun PodcastItemCard(
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Иконка подкаста
+            // Картинка подкаста (или логотип категории, если у подкаста нет своей)
+            val imageUrl = if (show.imageUrl.isNotEmpty()) show.imageUrl else fallbackImageUrl
+
             Box(
                 modifier = Modifier
                     .size(48.dp)
@@ -163,9 +171,20 @@ fun PodcastItemCard(
                         strokeWidth = 2.dp,
                         color = MaterialTheme.colorScheme.primary
                     )
+                } else if (imageUrl.isNotEmpty()) {
+                    AsyncImage(
+                        model = imageUrl,
+                        contentDescription = show.title,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(RoundedCornerShape(12.dp)),
+                        contentScale = ContentScale.Crop,
+                        placeholder = painterResource(id = R.drawable.logo),
+                        error = painterResource(id = R.drawable.logo)
+                    )
                 } else {
                     Icon(
-                        imageVector = if (isPlaying) Icons.Rounded.Podcasts else Icons.Rounded.Podcasts,
+                        imageVector = Icons.Rounded.Podcasts,
                         contentDescription = null,
                         tint = if (isPlaying)
                             MaterialTheme.colorScheme.primary
