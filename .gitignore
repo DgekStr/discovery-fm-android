@@ -15,6 +15,10 @@
 *.class
 *.log
 
+# Разрешить APK-сборки в папке assets (для хранения релизных версий)
+!assets/
+!assets/*.apk
+
 # Keystore files
 *.jks
 *.keystore
