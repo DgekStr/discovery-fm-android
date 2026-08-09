@@ -16,6 +16,7 @@ import com.example.MainActivity
 import ru.discoveryfm.player.R
 import android.support.v4.media.session.MediaSessionCompat
 import android.support.v4.media.session.PlaybackStateCompat
+import android.content.pm.PackageManager
 
 /**
  * Строит MediaStyle-уведомление для шторки и экрана блокировки.
@@ -92,10 +93,14 @@ class MediaNotificationManager(private val context: Context) {
             PlaybackStateCompat.ACTION_STOP
         )
 
+        // Версия приложения для отображения внизу уведомления
+        val versionText = getVersionText()
+
         return NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_play)
+            .setSmallIcon(R.drawable.logo)
             .setContentTitle(title)
             .setContentText(subtitle ?: "Discovery FM")
+            .setSubText(versionText)
             .setContentIntent(contentIntent)
             .setDeleteIntent(stopIntent)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
@@ -140,5 +145,21 @@ class MediaNotificationManager(private val context: Context) {
                 }
             )
             .build()
+    }
+
+    /**
+     * Возвращает строку версии для отображения внизу уведомления.
+     * Формат: v.2026 | 1.2.0-b2
+     */
+    private fun getVersionText(): String {
+        return try {
+            val pInfo = context.packageManager.getPackageInfo(
+                context.packageName,
+                0
+            )
+            "v.2026 | ${pInfo.versionName}"
+        } catch (e: PackageManager.NameNotFoundException) {
+            "v.2026"
+        }
     }
 }
