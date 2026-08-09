@@ -75,7 +75,7 @@ fun PodcastPlayerScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = show.title,
+                        text = show.cleanTitle,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         fontSize = 16.sp
@@ -143,7 +143,7 @@ fun PodcastPlayerScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             Text(
-                text = show.title,
+                text = show.cleanTitle,
                 fontSize = 22.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color.White,

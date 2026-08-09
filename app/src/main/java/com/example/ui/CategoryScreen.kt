@@ -202,7 +202,7 @@ fun PodcastItemCard(
                 modifier = Modifier.weight(1f)
             ) {
                 Text(
-                    text = show.title,
+                    text = show.cleanTitle,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
                     color = if (isPlaying)

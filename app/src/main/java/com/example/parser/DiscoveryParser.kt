@@ -86,8 +86,8 @@ object DiscoveryParser {
                     val titleEl = card.select("h1, h2, h3, h4, h5, h6, .title, .name, [class*=title], [class*=name]").firstOrNull()
                     val descEl = card.select("p, .desc, .description, .text, [class*=desc], [class*=text]").firstOrNull()
                     
-                    val title = titleEl?.text()?.trim() ?: ""
-                    val desc = descEl?.text()?.trim() ?: ""
+                    val title = Show.cleanDisplayTitle(titleEl?.text() ?: "")
+                    val desc = Show.cleanDisplayTitle(descEl?.text() ?: "")
                     
                     if (title.isNotEmpty() && desc.isNotEmpty()) {
                         shows.add(Show(title, desc))
@@ -103,14 +103,14 @@ object DiscoveryParser {
             val sections = doc.select("section, .section, [class*=section]")
             for (sec in sections) {
                 val secHeaderEl = sec.select("h1, h2, h3, h4, .section-title, .title, [class*=title]").firstOrNull()
-                val secHeader = secHeaderEl?.text()?.trim() ?: ""
+                val secHeader = Show.cleanDisplayTitle(secHeaderEl?.text() ?: "")
                 
                 if (secHeader.isNotEmpty()) {
                     val secShows = mutableListOf<Show>()
                     val items = sec.select(".item, .program, .show, .card, p")
                     for (item in items) {
-                        val t = item.select("h3, h4, h5, h6, strong, b, .title, [class*=title]").firstOrNull()?.text()?.trim() ?: ""
-                        val d = item.select(".desc, .text, p, [class*=desc], [class*=text]").firstOrNull()?.text()?.trim() ?: ""
+                        val t = Show.cleanDisplayTitle(item.select("h3, h4, h5, h6, strong, b, .title, [class*=title]").firstOrNull()?.text() ?: "")
+                        val d = Show.cleanDisplayTitle(item.select(".desc, .text, p, [class*=desc], [class*=text]").firstOrNull()?.text() ?: "")
                         if (t.isNotEmpty() && d.isNotEmpty() && t != secHeader) {
                             secShows.add(Show(t, d))
                         }
@@ -126,10 +126,10 @@ object DiscoveryParser {
                 val boldTexts = doc.select("strong, b, h4, h5")
                 val shows = mutableListOf<Show>()
                 for (bold in boldTexts) {
-                    val title = bold.text().trim()
+                    val title = Show.cleanDisplayTitle(bold.text())
                     // Look for an immediately following text sibling or next paragraph
                     val nextSibling = bold.nextElementSibling()
-                    val desc = nextSibling?.text()?.trim() ?: ""
+                    val desc = Show.cleanDisplayTitle(nextSibling?.text() ?: "")
                     
                     if (title.length in 3..60 && desc.length in 10..400) {
                         shows.add(Show(title, desc))

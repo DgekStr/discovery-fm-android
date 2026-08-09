@@ -113,8 +113,8 @@ class PodcastRepository {
 
                         shows.add(
                             Show(
-                                title = item.getString("title"),
-                                description = item.optString("description", "Описание отсутствует"),
+                                title = Show.cleanDisplayTitle(item.getString("title")),
+                                description = Show.cleanDisplayTitle(item.optString("description", "Описание отсутствует")),
                                 audioUrl = audioUrl,
                                 link = item.optString("link", ""),
                                 duration = durationSeconds,
@@ -126,7 +126,7 @@ class PodcastRepository {
                     // Добавляем категорию с картинкой
                     result.add(
                         Category(
-                            name = categoryName,
+                            name = Show.cleanDisplayTitle(categoryName),
                             shows = shows,
                             imageUrl = finalCategoryImage  // <-- КАРТИНКА КАТЕГОРИИ
                         )
