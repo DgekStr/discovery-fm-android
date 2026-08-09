@@ -1,6 +1,11 @@
 package com.example.viewmodel
 
 import android.app.Application
+import android.content.ComponentName
+import android.content.Context
+import android.content.Intent
+import android.content.ServiceConnection
+import android.os.IBinder
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.data.NowPlayingInfo
@@ -9,15 +14,14 @@ import com.example.data.PodcastRepository
 import com.example.data.ThemePreferences
 import com.example.model.Category
 import com.example.model.Show
-import com.example.player.PlayerManager
+import com.example.player.PlaybackService
 import com.example.player.PlayerPlaybackState
-import com.example.player.PodcastPlayerManager
 import com.example.ui.theme.ThemeMode
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 sealed class PodcastLoadState {
@@ -28,43 +32,64 @@ sealed class PodcastLoadState {
 }
 
 class DiscoveryViewModel(application: Application) : AndroidViewModel(application) {
-    private val playerManager = PlayerManager(application)
+    private val appContext = application.applicationContext
     private val nowPlayingRepository = NowPlayingRepository()
     private val podcastRepository = PodcastRepository()
-    private val podcastPlayerManager = PodcastPlayerManager(application)
     private val themePreferences = ThemePreferences(application)
+
+    // === СЕРВИС ВОСПРОИЗВЕДЕНИЯ ===
+    private var playbackService: PlaybackService? = null
+    private var serviceBound = false
+
+    private val serviceConnection = object : ServiceConnection {
+        override fun onServiceConnected(name: ComponentName?, binder: IBinder?) {
+            playbackService = (binder as? PlaybackService.LocalBinder)?.getService()
+            serviceBound = true
+            bindServiceFlows()
+        }
+
+        override fun onServiceDisconnected(name: ComponentName?) {
+            playbackService = null
+            serviceBound = false
+        }
+    }
 
     // === ТЕМА ===
     private val _themeMode = MutableStateFlow(ThemeMode.SYSTEM)
     val themeMode: StateFlow<ThemeMode> = _themeMode.asStateFlow()
 
-    // === РАДИО-ПЛЕЕР ===
+    // === РАДИО-ПЛЕЕР (проксируется из сервиса) ===
     private val _nowPlayingInfo = MutableStateFlow<NowPlayingInfo?>(null)
     val nowPlayingInfo: StateFlow<NowPlayingInfo?> = _nowPlayingInfo.asStateFlow()
 
     private val _playerState = MutableStateFlow(PlayerPlaybackState.IDLE)
     val playerState: StateFlow<PlayerPlaybackState> = _playerState.asStateFlow()
 
-    private val _playerVolume = MutableStateFlow(playerManager.getVolume())
+    private val _playerVolume = MutableStateFlow(0.5f)
     val playerVolume: StateFlow<Float> = _playerVolume.asStateFlow()
 
-    // === ПОДКАСТЫ ===
+    // === ПОДКАСТЫ (проксируется из сервиса) ===
     private val _podcastState = MutableStateFlow<PodcastLoadState>(PodcastLoadState.Idle)
     val podcastState: StateFlow<PodcastLoadState> = _podcastState.asStateFlow()
 
-    // === ПЛЕЕР ПОДКАСТОВ - ПРОКСИРУЕМ ИЗ PodcastPlayerManager ===
-    val podcastIsPlaying: StateFlow<Boolean> = podcastPlayerManager.isPlaying
-    val currentPodcastTitle: StateFlow<String?> = podcastPlayerManager.currentPodcast
-    val podcastIsLoading: StateFlow<Boolean> = podcastPlayerManager.isLoading
-    val podcastCurrentPosition: StateFlow<Int> = podcastPlayerManager.currentPosition
-    val podcastDuration: StateFlow<Int> = podcastPlayerManager.duration
+    private val _podcastIsPlaying = MutableStateFlow(false)
+    val podcastIsPlaying: StateFlow<Boolean> = _podcastIsPlaying.asStateFlow()
+
+    private val _currentPodcastTitle = MutableStateFlow<String?>(null)
+    val currentPodcastTitle: StateFlow<String?> = _currentPodcastTitle.asStateFlow()
+
+    private val _podcastIsLoading = MutableStateFlow(false)
+    val podcastIsLoading: StateFlow<Boolean> = _podcastIsLoading.asStateFlow()
+
+    private val _podcastCurrentPosition = MutableStateFlow(0)
+    val podcastCurrentPosition: StateFlow<Int> = _podcastCurrentPosition.asStateFlow()
+
+    private val _podcastDuration = MutableStateFlow(0)
+    val podcastDuration: StateFlow<Int> = _podcastDuration.asStateFlow()
 
     // === НАВИГАЦИЯ ПО ПОДКАСТАМ ===
     private var currentPlaylist: List<Show> = emptyList()
     private var currentPlaylistIndex: Int = -1
-
-    // Флаг для отслеживания ручной остановки/паузы
-    private var isManualPause = false
 
     init {
         // Загружаем сохранённый режим темы из DataStore
@@ -77,38 +102,62 @@ class DiscoveryViewModel(application: Application) : AndroidViewModel(applicatio
         loadPodcasts()
         fetchAndDisplayNowPlaying()
 
-        // Подписка на радио-плеер
+        // Привязываемся к сервису воспроизведения
+        bindPlaybackService()
+    }
+
+    private fun bindPlaybackService() {
+        val intent = Intent(appContext, PlaybackService::class.java)
+        appContext.bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE)
+    }
+
+    private fun unbindPlaybackService() {
+        if (serviceBound) {
+            appContext.unbindService(serviceConnection)
+            serviceBound = false
+        }
+        playbackService = null
+    }
+
+    private fun bindServiceFlows() {
+        val service = playbackService ?: return
+
+        // Радио
         viewModelScope.launch {
-            playerManager.state.collect { state ->
+            service.radioState.collect { state ->
                 _playerState.value = state
             }
         }
-
         viewModelScope.launch {
-            playerManager.volume.collect { volume ->
+            service.radioVolume.collect { volume ->
                 _playerVolume.value = volume
             }
         }
 
-        // Автоматическое воспроизведение следующего подкаста
+        // Подкасты
         viewModelScope.launch {
-            podcastPlayerManager.isPlaying.collect { isPlaying ->
-                // Если плеер остановлен вручную - не переключаем
-                if (isManualPause) {
-                    android.util.Log.d("Podcast", "Ручная пауза, автопереход отключен")
-                    return@collect
-                }
-
-                // Когда плеер закончил воспроизведение (isPlaying стал false после завершения)
-                if (!isPlaying && currentPodcastTitle.value != null && !podcastIsLoading.value) {
-                    // Небольшая задержка, чтобы убедиться, что это действительно завершение
-                    kotlinx.coroutines.delay(500)
-                    // Проверяем, что плеер всё ещё остановлен и не было ручной паузы
-                    if (!podcastIsPlaying.value && currentPodcastTitle.value != null && !isManualPause) {
-                        android.util.Log.d("Podcast", "Автопереход на следующий трек")
-                        playNextPodcast()
-                    }
-                }
+            service.podcastIsPlaying.collect { playing ->
+                _podcastIsPlaying.value = playing
+            }
+        }
+        viewModelScope.launch {
+            service.podcastIsLoading.collect { loading ->
+                _podcastIsLoading.value = loading
+            }
+        }
+        viewModelScope.launch {
+            service.currentPodcastTitle.collect { title ->
+                _currentPodcastTitle.value = title
+            }
+        }
+        viewModelScope.launch {
+            service.podcastCurrentPosition.collect { position ->
+                _podcastCurrentPosition.value = position
+            }
+        }
+        viewModelScope.launch {
+            service.podcastDuration.collect { duration ->
+                _podcastDuration.value = duration
             }
         }
     }
@@ -176,116 +225,60 @@ class DiscoveryViewModel(application: Application) : AndroidViewModel(applicatio
             return
         }
 
-        // Сбрасываем флаг ручной паузы
-        isManualPause = false
-
-        // Сохраняем плейлист и текущий индекс
         currentPlaylist = playlist
         currentPlaylistIndex = playlist.indexOfFirst { it.title == show.title }
         if (currentPlaylistIndex == -1) currentPlaylistIndex = 0
 
-        // Останавливаем радио, если играет
-        if (playerManager.getCurrentState() == PlayerPlaybackState.PLAYING) {
-            playerManager.pause()
+        val service = playbackService
+        if (service != null) {
+            service.playPodcast(show, playlist)
+        } else {
+            // Сервис ещё не привязан — запускаем через Intent
+            val intent = Intent(appContext, PlaybackService::class.java).apply {
+                action = PlaybackService.ACTION_PLAY_PODCAST
+                putExtra(PlaybackService.EXTRA_SHOW, show)
+                putExtra(PlaybackService.EXTRA_PLAYLIST, ArrayList(playlist))
+            }
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                appContext.startForegroundService(intent)
+            } else {
+                appContext.startService(intent)
+            }
         }
-
-        // Воспроизводим подкаст
-        podcastPlayerManager.play(show.audioUrl, show.title)
     }
 
     fun togglePodcastPlayback(show: Show) {
-        if (show.audioUrl.isEmpty()) {
-            android.util.Log.e("Podcast", "Нет аудио для: ${show.title}")
-            return
-        }
-
-        // Если уже играет этот же подкаст — ставим на паузу или возобновляем
-        if (currentPodcastTitle.value == show.title) {
-            if (podcastIsPlaying.value) {
-                // ПАУЗА - устанавливаем флаг ручной паузы
-                isManualPause = true
-                podcastPlayerManager.pause()
-            } else {
-                // ВОЗОБНОВЛЕНИЕ - сбрасываем флаг
-                isManualPause = false
-                podcastPlayerManager.resume()
-            }
-            return
-        }
-
-        // Останавливаем радио, если играет
-        if (playerManager.getCurrentState() == PlayerPlaybackState.PLAYING) {
-            playerManager.pause()
-        }
-
-        // Сбрасываем флаг ручной паузы
-        isManualPause = false
-
-        // Воспроизводим новый подкаст
-        podcastPlayerManager.play(show.audioUrl, show.title)
+        if (show.audioUrl.isEmpty()) return
+        playbackService?.togglePodcastPlayback(show)
     }
 
     fun playNextPodcast() {
-        if (currentPlaylist.isEmpty() || currentPlaylistIndex == -1) return
-
-        val nextIndex = currentPlaylistIndex + 1
-        if (nextIndex < currentPlaylist.size) {
-            currentPlaylistIndex = nextIndex
-            val nextShow = currentPlaylist[nextIndex]
-            // Сбрасываем флаг перед воспроизведением
-            isManualPause = false
-            podcastPlayerManager.play(nextShow.audioUrl, nextShow.title)
-            android.util.Log.d("Podcast", "Автопереход: ${nextShow.title}")
-        } else {
-            // Если больше нет подкастов — останавливаем
-            isManualPause = false
-            podcastPlayerManager.stop()
-            currentPlaylistIndex = -1
-        }
+        playbackService?.playNextPodcast()
     }
 
     fun playPreviousPodcast() {
-        if (currentPlaylist.isEmpty() || currentPlaylistIndex == -1) return
-
-        val prevIndex = currentPlaylistIndex - 1
-        if (prevIndex >= 0) {
-            currentPlaylistIndex = prevIndex
-            val prevShow = currentPlaylist[prevIndex]
-            isManualPause = false
-            podcastPlayerManager.play(prevShow.audioUrl, prevShow.title)
-        }
+        playbackService?.playPreviousPodcast()
     }
 
     fun seekPodcast(position: Int) {
-        podcastPlayerManager.seekTo(position)
+        playbackService?.seekPodcast(position)
     }
 
     fun isLastPodcast(): Boolean {
-        return currentPlaylist.isNotEmpty() && currentPlaylistIndex == currentPlaylist.size - 1
+        return playbackService?.isLastPodcast() ?: (currentPlaylist.isNotEmpty() && currentPlaylistIndex == currentPlaylist.size - 1)
     }
 
     fun isFirstPodcast(): Boolean {
-        return currentPlaylistIndex <= 0
+        return playbackService?.isFirstPodcast() ?: (currentPlaylistIndex <= 0)
     }
 
     // === УПРАВЛЕНИЕ РАДИО ===
     fun togglePlay() {
-        // Если играет подкаст — останавливаем его
-        if (podcastIsPlaying.value) {
-            isManualPause = true
-            podcastPlayerManager.stop()
-        }
-
-        if (playerManager.getCurrentState() == PlayerPlaybackState.PLAYING) {
-            playerManager.pause()
-        } else {
-            playerManager.play()
-            fetchAndDisplayNowPlaying()
-        }
+        playbackService?.toggleRadio()
     }
 
     fun setVolume(volume: Float) {
-        playerManager.setVolume(volume)
+        playbackService?.setRadioVolume(volume)
     }
 
     // === УПРАВЛЕНИЕ ТЕМОЙ ===
@@ -298,7 +291,7 @@ class DiscoveryViewModel(application: Application) : AndroidViewModel(applicatio
 
     override fun onCleared() {
         super.onCleared()
-        playerManager.release()
-        podcastPlayerManager.release()
+        // НЕ останавливаем сервис — музыка должна продолжать играть в фоне
+        unbindPlaybackService()
     }
 }

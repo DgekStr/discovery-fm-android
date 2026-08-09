@@ -12,6 +12,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -416,8 +417,9 @@ fun YouTubeStyleHeader(
         modifier = Modifier
             .fillMaxWidth()
             .background(MaterialTheme.colorScheme.primary)
+            .windowInsetsPadding(WindowInsets.statusBars)
             .padding(
-                top = 32.dp,
+                top = 12.dp,
                 start = 12.dp,
                 end = 12.dp,
                 bottom = 10.dp

@@ -16,8 +16,8 @@ android {
     applicationId = "ru.discoveryfm.player"
     minSdk = 24
     targetSdk = 35
-    versionCode = 2
-    versionName = "1.1.0-b2"
+    versionCode = 3
+    versionName = "1.2.0-b1"
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
@@ -84,6 +84,7 @@ dependencies {
   implementation(libs.androidx.lifecycle.viewmodel.compose)
   implementation(libs.androidx.datastore.preferences)
   implementation(libs.androidx.navigation.compose)
+  implementation(libs.androidx.media)
 
   // === COMPOSE ===
   implementation(libs.androidx.compose.ui)
