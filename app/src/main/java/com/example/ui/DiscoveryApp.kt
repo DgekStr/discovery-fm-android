@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import ru.discoveryfm.player.R
+import ru.discoveryfm.player.BuildConfig
 import com.example.model.Category
 import com.example.model.Show
 import com.example.player.PlayerPlaybackState
@@ -312,6 +313,19 @@ fun DiscoveryApp(
                     }
                 }
                 else -> {}
+            }
+
+            // === ВЕРСИЯ ПРИЛОЖЕНИЯ ===
+            item {
+                Text(
+                    text = "v.2026 | ${BuildConfig.VERSION_NAME}",
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.4f),
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 24.dp, bottom = 16.dp)
+                )
             }
         }
     }

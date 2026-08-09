@@ -16,7 +16,6 @@ import com.example.MainActivity
 import ru.discoveryfm.player.R
 import android.support.v4.media.session.MediaSessionCompat
 import android.support.v4.media.session.PlaybackStateCompat
-import android.content.pm.PackageManager
 
 /**
  * Строит MediaStyle-уведомление для шторки и экрана блокировки.
@@ -93,21 +92,20 @@ class MediaNotificationManager(private val context: Context) {
             PlaybackStateCompat.ACTION_STOP
         )
 
-        // Версия приложения для отображения внизу уведомления
-        val versionText = getVersionText()
+        // Large icon: если не передана обложка — используем логотип приложения
+        val effectiveLargeIcon = largeIcon ?: loadAppLogo()
 
         return NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(R.drawable.logo)
+            .setSmallIcon(R.drawable.ic_play)
             .setContentTitle(title)
             .setContentText(subtitle ?: "Discovery FM")
-            .setSubText(versionText)
             .setContentIntent(contentIntent)
             .setDeleteIntent(stopIntent)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setOnlyAlertOnce(true)
             .setOngoing(isPlaying)
             .setColor(ContextCompat.getColor(context, R.color.ic_launcher_background))
-            .setLargeIcon(largeIcon)
+            .setLargeIcon(effectiveLargeIcon)
             .setStyle(
                 MediaStyle()
                     .setMediaSession(mediaSessionToken)
@@ -148,18 +146,28 @@ class MediaNotificationManager(private val context: Context) {
     }
 
     /**
-     * Возвращает строку версии для отображения внизу уведомления.
-     * Формат: v.2026 | 1.2.0-b2
+     * Загружает логотип приложения из ресурсов как Bitmap
+     * для отображения в уведомлении (large icon).
      */
-    private fun getVersionText(): String {
+    private fun loadAppLogo(): Bitmap? {
         return try {
-            val pInfo = context.packageManager.getPackageInfo(
-                context.packageName,
-                0
+            val drawable = context.resources.getDrawable(
+                R.drawable.logo,
+                context.theme
             )
-            "v.2026 | ${pInfo.versionName}"
-        } catch (e: PackageManager.NameNotFoundException) {
-            "v.2026"
+            if (drawable is android.graphics.drawable.BitmapDrawable) {
+                drawable.bitmap
+            } else {
+                val width = drawable.intrinsicWidth.takeIf { it > 0 } ?: 512
+                val height = drawable.intrinsicHeight.takeIf { it > 0 } ?: 512
+                val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+                val canvas = android.graphics.Canvas(bitmap)
+                drawable.setBounds(0, 0, canvas.width, canvas.height)
+                drawable.draw(canvas)
+                bitmap
+            }
+        } catch (e: Exception) {
+            null
         }
     }
 }
