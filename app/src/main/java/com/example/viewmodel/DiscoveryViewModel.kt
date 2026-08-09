@@ -62,6 +62,16 @@ class DiscoveryViewModel(application: Application) : AndroidViewModel(applicatio
     private val _nowPlayingInfo = MutableStateFlow<NowPlayingInfo?>(null)
     val nowPlayingInfo: StateFlow<NowPlayingInfo?> = _nowPlayingInfo.asStateFlow()
 
+    // Фото/логотип текущего исполнителя (из Deezer)
+    private val _artistImageUrl = MutableStateFlow<String?>(null)
+    val artistImageUrl: StateFlow<String?> = _artistImageUrl.asStateFlow()
+
+    // Текущий артист, для которого искали фото
+    private val _artistImageArtist = MutableStateFlow<String?>(null)
+
+    // Кэш: имя артиста -> URL фото (чтобы не дёргать Deezer для одного и того же артиста)
+    private val artistImageCache = mutableMapOf<String, String?>()
+
     private val _playerState = MutableStateFlow(PlayerPlaybackState.IDLE)
     val playerState: StateFlow<PlayerPlaybackState> = _playerState.asStateFlow()
 
@@ -205,6 +215,30 @@ class DiscoveryViewModel(application: Application) : AndroidViewModel(applicatio
                         title = title
                     )
                     android.util.Log.d("NowPlaying", "Загружено: $artist - $title")
+                }
+
+                // === ФОТО ИСПОЛНИТЕЛЯ (Deezer) ===
+                if (artist.isNotEmpty()) {
+                    // Если артист сменился — сбрасываем фото
+                    if (_artistImageArtist.value != artist) {
+                        _artistImageUrl.value = null
+                        _artistImageArtist.value = artist
+
+                        // Ищем в кэше или запрашиваем Deezer
+                        val cached = artistImageCache[artist]
+                        val imageUrl = if (cached != null) {
+                            cached
+                        } else {
+                            nowPlayingRepository.fetchArtistImage(artist).also {
+                                artistImageCache[artist] = it
+                            }
+                        }
+
+                        withContext(Dispatchers.Main) {
+                            _artistImageUrl.value = imageUrl
+                            android.util.Log.d("NowPlaying", "Фото артиста: $imageUrl")
+                        }
+                    }
                 }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {

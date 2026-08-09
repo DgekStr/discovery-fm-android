@@ -23,6 +23,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -35,7 +36,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import ru.discoveryfm.player.R
-import ru.discoveryfm.player.BuildConfig
 import com.example.model.Category
 import com.example.model.Show
 import com.example.player.PlayerPlaybackState
@@ -54,6 +54,7 @@ fun DiscoveryApp(
     val volume by viewModel.playerVolume.collectAsState()
     val podcastState by viewModel.podcastState.collectAsState()
     val nowPlayingInfo by viewModel.nowPlayingInfo.collectAsState()
+    val artistImageUrl by viewModel.artistImageUrl.collectAsState()
     val podcastIsPlaying by viewModel.podcastIsPlaying.collectAsState()
     val podcastIsLoading by viewModel.podcastIsLoading.collectAsState()
     val currentPodcastTitle by viewModel.currentPodcastTitle.collectAsState()
@@ -185,6 +186,7 @@ fun DiscoveryApp(
                     playerState = playerState,
                     volume = volume,
                     nowPlayingInfo = nowPlayingInfo,
+                    artistImageUrl = artistImageUrl,
                     onPlayPauseToggle = { viewModel.togglePlay() },
                     onVolumeChange = { viewModel.setVolume(it) }
                 )
@@ -318,7 +320,7 @@ fun DiscoveryApp(
             // === ВЕРСИЯ ПРИЛОЖЕНИЯ ===
             item {
                 Text(
-                    text = "v.2026 | ${BuildConfig.VERSION_NAME}",
+                    text = "v.2026",
                     fontSize = 12.sp,
                     color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.4f),
                     textAlign = TextAlign.Center,
@@ -508,6 +510,7 @@ fun RadioPlayerCard(
     playerState: PlayerPlaybackState,
     volume: Float,
     nowPlayingInfo: com.example.data.NowPlayingInfo?,
+    artistImageUrl: String?,
     onPlayPauseToggle: () -> Unit,
     onVolumeChange: (Float) -> Unit
 ) {
@@ -530,11 +533,38 @@ fun RadioPlayerCard(
                         colors = listOf(royalPurple.copy(alpha = 0.85f), darkBlue)
                     )
                 )
-                .padding(24.dp)
         ) {
+            // === ФОН С ФОТО ИСПОЛНИТЕЛЯ (на весь блок, полупрозрачный) ===
+            if (artistImageUrl != null && artistImageUrl.isNotEmpty()) {
+                AsyncImage(
+                    model = artistImageUrl,
+                    contentDescription = "Фото исполнителя",
+                    modifier = Modifier
+                        .matchParentSize()
+                        .alpha(0.30f)
+                        .clip(RoundedCornerShape(24.dp)),
+                    contentScale = ContentScale.Crop
+                )
+                // Затемнение поверх фото — для читаемости текста и кнопок
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .background(
+                            Brush.verticalGradient(
+                                colors = listOf(
+                                    Color.Black.copy(alpha = 0.35f),
+                                    Color.Black.copy(alpha = 0.55f)
+                                )
+                            )
+                        )
+                )
+            }
+
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(24.dp)
             ) {
                 Surface(
                     color = when (playerState) {
