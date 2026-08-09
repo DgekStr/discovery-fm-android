@@ -30,12 +30,20 @@ android {
       storePassword = project.properties["STORE_PASSWORD"] as? String ?: System.getenv("STORE_PASSWORD")
       keyAlias = "upload"
       keyPassword = project.properties["KEY_PASSWORD"] as? String ?: System.getenv("KEY_PASSWORD")
+
+      // Подпись v1 (JAR) + v2 — требуется для установки
+      // на Xiaomi/HyperOS и старых Android-устройств
+      enableV1Signing = true
+      enableV2Signing = true
     }
     create("debugConfig") {
       storeFile = file(System.getProperty("user.home") + "/.android/debug.keystore")
       storePassword = "android"
       keyAlias = "androiddebugkey"
       keyPassword = "android"
+
+      enableV1Signing = true
+      enableV2Signing = true
     }
   }
 
@@ -44,7 +52,9 @@ android {
       isCrunchPngs = false
       isMinifyEnabled = false
       proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-      signingConfig = signingConfigs.getByName("release")
+      // Подпись debug-ключом для распространения APK напрямую
+      // (Android 16 отклоняет самоподписанные сертификаты без v1)
+      signingConfig = signingConfigs.getByName("debugConfig")
     }
     debug {
       signingConfig = signingConfigs.getByName("debugConfig")
