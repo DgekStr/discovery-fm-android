@@ -40,7 +40,9 @@ class MediaNotificationManager(private val context: Context) {
             val channel = NotificationChannel(
                 CHANNEL_ID,
                 "Воспроизведение",
-                NotificationManager.IMPORTANCE_LOW
+                // Важность DEFAULT — чтобы значок приложения
+                // отображался в статус-баре рядом с часами
+                NotificationManager.IMPORTANCE_DEFAULT
             ).apply {
                 description = "Управление воспроизведением музыки и подкастов"
                 setShowBadge(false)
