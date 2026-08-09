@@ -26,6 +26,10 @@ class MediaNotificationManager(private val context: Context) {
     companion object {
         const val CHANNEL_ID = "playback_channel"
         const val NOTIFICATION_ID = 1001
+
+        // Канал для постоянного статусного уведомления (иконка в статус-баре)
+        const val STATUS_CHANNEL_ID = "status_channel"
+        const val STATUS_NOTIFICATION_ID = 1002
     }
 
     private val notificationManager =
@@ -48,6 +52,17 @@ class MediaNotificationManager(private val context: Context) {
                 setShowBadge(false)
             }
             notificationManager.createNotificationChannel(channel)
+
+            // Канал для постоянного статусного уведомления
+            val statusChannel = NotificationChannel(
+                STATUS_CHANNEL_ID,
+                "Статус приложения",
+                NotificationManager.IMPORTANCE_MIN
+            ).apply {
+                description = "Показывает значок приложения в статус-баре"
+                setShowBadge(false)
+            }
+            notificationManager.createNotificationChannel(statusChannel)
         }
     }
 
@@ -171,5 +186,37 @@ class MediaNotificationManager(private val context: Context) {
         } catch (e: Exception) {
             null
         }
+    }
+
+    /**
+     * Показывает постоянное статусное уведомление,
+     * которое отображает значок приложения в статус-баре.
+     */
+    fun showStatusNotification(title: String) {
+        val contentIntent = PendingIntent.getActivity(
+            context,
+            1,
+            Intent(context, MainActivity::class.java),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val notification = NotificationCompat.Builder(context, STATUS_CHANNEL_ID)
+            .setSmallIcon(R.drawable.logo)
+            .setContentTitle(title)
+            .setContentText("Discovery FM слушает вас")
+            .setContentIntent(contentIntent)
+            .setOngoing(true)
+            .setOnlyAlertOnce(true)
+            .setSilent(true)
+            .build()
+
+        notificationManager.notify(STATUS_NOTIFICATION_ID, notification)
+    }
+
+    /**
+     * Скрывает статусное уведомление.
+     */
+    fun hideStatusNotification() {
+        notificationManager.cancel(STATUS_NOTIFICATION_ID)
     }
 }

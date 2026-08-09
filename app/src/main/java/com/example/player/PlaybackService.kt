@@ -302,8 +302,11 @@ class PlaybackService : Service() {
             // Сервис должен быть в foreground, пока играет музыка,
             // чтобы система не убила процесс при закрытии приложения
             startForeground(MediaNotificationManager.NOTIFICATION_ID, notification)
+            // Показываем статусное уведомление для иконки в статус-баре
+            notificationManager.showStatusNotification("Discovery FM")
         } else {
             stopForegroundCompat()
+            notificationManager.hideStatusNotification()
         }
     }
 
