@@ -16,8 +16,8 @@ android {
     applicationId = "ru.discoveryfm.player"
     minSdk = 24
     targetSdk = 35
-    versionCode = 5
-    versionName = "1.2.0-b3"
+    versionCode = 6
+    versionName = "1.2.0-b4"
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
