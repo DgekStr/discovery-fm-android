@@ -3,13 +3,9 @@ package com.example.data
 import com.example.model.Category
 import com.example.model.Show
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
-import java.net.HttpURLConnection
 import java.net.URL
 
 class PodcastRepository {
@@ -141,97 +137,12 @@ class PodcastRepository {
                     return@withContext getFallbackCategories()
                 }
 
-                // === ДОПОЛНИТЕЛЬНО: ОЦЕНКА ДЛИТЕЛЬНОСТИ ДЛЯ ПОДКАСТОВ БЕЗ НЕЁ ===
-                // Если API не отдал duration, оцениваем по размеру аудиофайла (HEAD-запрос)
-                val withEstimates = estimateMissingDurations(result)
-
-                withEstimates
+                result
 
             } catch (e: Exception) {
                 e.printStackTrace()
                 getFallbackCategories()
             }
-        }
-    }
-
-    /**
-     * Для подкастов без длительности делает HEAD-запрос к аудиофайлу
-     * и оценивает длительность по размеру файла.
-     * Возвращает новый список категорий с заполненными длительностями.
-     */
-    private suspend fun estimateMissingDurations(categories: List<Category>): List<Category> {
-        // Сопоставляем «show → длительность» для всех без неё
-        val showsToEstimate = categories
-            .flatMap { it.shows }
-            .filter { it.duration <= 0 && it.audioUrl.isNotEmpty() }
-
-        if (showsToEstimate.isEmpty()) return categories
-
-        android.util.Log.d("PodcastRepo", "⏱️ Оцениваем длительность для ${showsToEstimate.size} подкастов...")
-
-        // id объекта -> оценённая длительность
-        val estimatedByIdentity = mutableMapOf<Show, Int>()
-
-        // Обрабатываем порциями (по 8 параллельных HEAD-запросов)
-        val chunkSize = 8
-        coroutineScope {
-            for (chunk in showsToEstimate.chunked(chunkSize)) {
-                val deferreds = chunk.map { show ->
-                    async(Dispatchers.IO) {
-                        show to estimateDurationFromFileSize(show.audioUrl)
-                    }
-                }
-
-                for ((show, estimated) in deferreds.awaitAll()) {
-                    if (estimated > 0) {
-                        estimatedByIdentity[show] = estimated
-                    }
-                }
-            }
-        }
-
-        android.util.Log.d("PodcastRepo", "⏱️ Оценено: ${estimatedByIdentity.size} из ${showsToEstimate.size}")
-
-        // Пересоздаём категории с учётом оценённых длительностей
-        return categories.map { cat ->
-            val newShows = cat.shows.map { show ->
-                val estimated = estimatedByIdentity[show]
-                if (estimated != null && estimated > 0) {
-                    show.copy(duration = estimated)
-                } else {
-                    show
-                }
-            }
-            cat.copy(shows = newShows)
-        }
-    }
-
-    /**
-     * HEAD-запрос к аудиофайлу, оценка длительности по размеру.
-     * Битрейт файлов DiscoveryFM ≈ 111 kbps (проверено по файлу с известной длительностью).
-     * ~13860 байт/сек.
-     */
-    private fun estimateDurationFromFileSize(audioUrl: String): Int {
-        return try {
-            val url = URL(audioUrl)
-            val connection = url.openConnection() as HttpURLConnection
-            connection.requestMethod = "HEAD"
-            connection.connectTimeout = 8000
-            connection.readTimeout = 8000
-            connection.instanceFollowRedirects = true
-
-            val contentLength = connection.contentLengthLong
-            connection.disconnect()
-
-            if (contentLength > 0) {
-                val bytesPerSecond = 13860.0 // ~111 kbps (с запасом на заголовки MP3)
-                (contentLength / bytesPerSecond).toInt().coerceAtLeast(1)
-            } else {
-                0
-            }
-        } catch (e: Exception) {
-            android.util.Log.e("PodcastRepo", "Ошибка HEAD-запроса для $audioUrl: ${e.message}")
-            0
         }
     }
 
