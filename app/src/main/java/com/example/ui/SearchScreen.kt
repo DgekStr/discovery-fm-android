@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -130,7 +131,7 @@ fun SearchScreen(
                     )
                 }
 
-                items(items = results, key = { it.show.title + it.categoryName }) { result ->
+                itemsIndexed(items = results, key = { index, it -> "$index-${it.show.title}-${it.categoryName}" }) { index, result ->
                     SearchResultCard(
                         item = result,
                         onClick = {
