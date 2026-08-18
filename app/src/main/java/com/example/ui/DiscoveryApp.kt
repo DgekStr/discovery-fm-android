@@ -61,6 +61,8 @@ fun DiscoveryApp(
     val podcastCurrentPosition by viewModel.podcastCurrentPosition.collectAsState()
     val podcastDuration by viewModel.podcastDuration.collectAsState()
     val themeMode by viewModel.themeMode.collectAsState()
+    val loadProgress by viewModel.loadProgress.collectAsState()
+    val isInitialLoading by viewModel.isInitialLoading.collectAsState()
 
     var selectedCategory by remember { mutableStateOf<Category?>(null) }
     var selectedPodcast by remember { mutableStateOf<Show?>(null) }
@@ -70,6 +72,13 @@ fun DiscoveryApp(
         viewModel.loadPodcasts()
         viewModel.fetchAndDisplayNowPlaying()
     }
+
+    // === ЭКРАН ЗАГРУЗКИ (пока грузятся данные из API) ===
+    if (isInitialLoading) {
+        LoadingScreen(progress = loadProgress)
+        return
+    }
+
 
     LaunchedEffect(playerState) {
         if (playerState == PlayerPlaybackState.PLAYING) {

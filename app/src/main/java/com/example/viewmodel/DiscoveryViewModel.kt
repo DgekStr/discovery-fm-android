@@ -88,6 +88,13 @@ class DiscoveryViewModel(application: Application) : AndroidViewModel(applicatio
     private val _podcastState = MutableStateFlow<PodcastLoadState>(PodcastLoadState.Idle)
     val podcastState: StateFlow<PodcastLoadState> = _podcastState.asStateFlow()
 
+    // === ПРОГРЕСС ПЕРВИЧНОЙ ЗАГРУЗКИ ===
+    private val _loadProgress = MutableStateFlow(0)
+    val loadProgress: StateFlow<Int> = _loadProgress.asStateFlow()
+
+    private val _isInitialLoading = MutableStateFlow(true)
+    val isInitialLoading: StateFlow<Boolean> = _isInitialLoading.asStateFlow()
+
     private val _podcastIsPlaying = MutableStateFlow(false)
     val podcastIsPlaying: StateFlow<Boolean> = _podcastIsPlaying.asStateFlow()
 
@@ -182,9 +189,13 @@ class DiscoveryViewModel(application: Application) : AndroidViewModel(applicatio
     fun loadPodcasts() {
         viewModelScope.launch(Dispatchers.IO) {
             _podcastState.value = PodcastLoadState.Loading
+            _loadProgress.value = 0
             try {
-                val categories = podcastRepository.fetchPodcasts()
+                val categories = podcastRepository.fetchPodcasts(onProgress = { progress ->
+                    _loadProgress.value = progress
+                })
                 withContext(Dispatchers.Main) {
+                    _isInitialLoading.value = false
                     if (categories.isNotEmpty()) {
                         _podcastState.value = PodcastLoadState.Success(
                             categories = categories,
@@ -200,6 +211,7 @@ class DiscoveryViewModel(application: Application) : AndroidViewModel(applicatio
                 }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
+                    _isInitialLoading.value = false
                     _podcastState.value = PodcastLoadState.Error("Ошибка загрузки: ${e.message}")
                 }
             }

@@ -11,7 +11,7 @@ import java.net.URL
 class PodcastRepository {
     private val apiUrl = "https://discoveryfm.ru/xml/podcast_api.php"
 
-    suspend fun fetchPodcasts(): List<Category> {
+    suspend fun fetchPodcasts(onProgress: ((Int) -> Unit)? = null): List<Category> {
         return withContext(Dispatchers.IO) {
             try {
                 val jsonString = URL(apiUrl)
@@ -27,8 +27,11 @@ class PodcastRepository {
 
                 val categoriesArray: JSONArray = jsonObject.getJSONArray("categories")
                 val result = mutableListOf<Category>()
+                val totalCategories = categoriesArray.length()
 
                 for (i in 0 until categoriesArray.length()) {
+                    // Отчёт прогресса: категория обработана (0..90%)
+                    onProgress?.invoke((i * 90) / totalCategories)
                     val catObj = categoriesArray.getJSONObject(i)
                     val categoryName = catObj.getString("name")
                     val podcastsArray = catObj.getJSONArray("podcasts")
@@ -61,7 +64,10 @@ class PodcastRepository {
                     android.util.Log.d("PodcastRepo", "🖼️ Картинка категории: $finalCategoryImage")
 
                     val shows = mutableListOf<Show>()
+                    val totalPodcasts = podcastsArray.length()
                     for (j in 0 until podcastsArray.length()) {
+                        // Отчёт прогресса: подкасты внутри категории (0..90%)
+                        onProgress?.invoke((i * 90) / totalCategories + (j * 90) / totalCategories / totalPodcasts)
                         val item = podcastsArray.getJSONObject(j)
 
                         val durationStr = item.optString("duration", "")
@@ -137,10 +143,12 @@ class PodcastRepository {
                     return@withContext getFallbackCategories()
                 }
 
+                onProgress?.invoke(100)
                 result
 
             } catch (e: Exception) {
                 e.printStackTrace()
+                onProgress?.invoke(100)
                 getFallbackCategories()
             }
         }
