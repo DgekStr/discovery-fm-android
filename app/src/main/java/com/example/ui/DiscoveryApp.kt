@@ -229,7 +229,7 @@ fun DiscoveryApp(
 
             item {
                 Text(
-                    text = "📂 Категории подкастов",
+                    text = "АУДИОframes",
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onBackground,
