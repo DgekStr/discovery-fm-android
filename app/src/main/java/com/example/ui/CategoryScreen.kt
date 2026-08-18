@@ -106,7 +106,7 @@ fun CategoryScreen(
                         )
                         Spacer(modifier = Modifier.width(12.dp))
                         Text(
-                            text = "${category.shows.size} подкастов",
+                            text = "${category.shows.size} АУДИОframes",
                             fontSize = 14.sp,
                             color = MaterialTheme.colorScheme.onPrimaryContainer
                         )

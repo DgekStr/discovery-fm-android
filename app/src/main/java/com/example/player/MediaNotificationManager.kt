@@ -48,7 +48,7 @@ class MediaNotificationManager(private val context: Context) {
                 // отображался в статус-баре рядом с часами
                 NotificationManager.IMPORTANCE_DEFAULT
             ).apply {
-                description = "Управление воспроизведением музыки и подкастов"
+                description = "Управление воспроизведением музыки и АУДИОframes"
                 setShowBadge(false)
             }
             notificationManager.createNotificationChannel(channel)

@@ -50,7 +50,7 @@ fun SearchScreen(
                     OutlinedTextField(
                         value = query,
                         onValueChange = { query = it },
-                        placeholder = { Text("Поиск подкастов...") },
+                        placeholder = { Text("Поиск АУДИОframes...") },
                         singleLine = true,
                         shape = RoundedCornerShape(12.dp),
                         leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null) },
@@ -94,7 +94,7 @@ fun SearchScreen(
                     )
                     Spacer(modifier = Modifier.height(12.dp))
                     Text(
-                        text = "Введите название подкаста\nили категории",
+                        text = "Введите название АУДИОframes\nили категории",
                         fontSize = 16.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = androidx.compose.ui.text.style.TextAlign.Center

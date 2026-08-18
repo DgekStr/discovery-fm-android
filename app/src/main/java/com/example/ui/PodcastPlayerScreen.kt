@@ -149,7 +149,7 @@ fun PodcastPlayerScreen(
                 if (imageUrl.isNotEmpty()) {
                     AsyncImage(
                         model = imageUrl,
-                        contentDescription = "Обложка подкаста",
+                        contentDescription = "Обложка АУДИОframes",
                         modifier = Modifier
                             .fillMaxSize()
                             .background(MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f)),

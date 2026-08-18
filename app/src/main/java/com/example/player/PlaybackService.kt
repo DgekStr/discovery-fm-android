@@ -265,11 +265,11 @@ class PlaybackService : Service() {
         val radioPlaying = radioPlayer.getCurrentState() == PlayerPlaybackState.PLAYING
 
         return if (podcastPlaying) {
-            val title = podcastPlayer.currentPodcast.value ?: "Подкаст"
+            val title = podcastPlayer.currentPodcast.value ?: "АУДИОframes"
             notificationManager.buildNotification(
                 isPlaying = true,
                 title = title,
-                subtitle = "Подкаст • Discovery FM",
+                subtitle = "АУДИОframes • Discovery FM",
                 largeIcon = null,
                 mediaSessionToken = mediaSession.sessionToken,
                 showNext = !isLastPodcast(),

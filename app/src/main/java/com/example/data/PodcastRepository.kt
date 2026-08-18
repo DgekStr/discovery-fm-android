@@ -107,7 +107,7 @@ class PodcastRepository {
 
                         android.util.Log.d(
                             "PodcastRepo",
-                            "  📦 Подкаст: ${item.getString("title")}"
+                            "  📦 АУДИОframes: ${item.getString("title")}"
                         )
                         android.util.Log.d("PodcastRepo", "  🖼️ imageUrl: $imageUrl")
 
@@ -172,11 +172,11 @@ class PodcastRepository {
     private fun getFallbackCategories(): List<Category> {
         return listOf(
             Category(
-                name = "🎙️ Подкасты Discovery FM",
+                name = "🎙️ АУДИОframes Discovery FM",
                 shows = listOf(
-                    Show("Подкаст 1", "Описание подкаста 1", "", "", 0, ""),
-                    Show("Подкаст 2", "Описание подкаста 2", "", "", 0, ""),
-                    Show("Подкаст 3", "Описание подкаста 3", "", "", 0, "")
+                    Show("АУДИОframes 1", "Описание АУДИОframes 1", "", "", 0, ""),
+                    Show("АУДИОframes 2", "Описание АУДИОframes 2", "", "", 0, ""),
+                    Show("АУДИОframes 3", "Описание АУДИОframes 3", "", "", 0, "")
                 ),
                 imageUrl = ""
             )

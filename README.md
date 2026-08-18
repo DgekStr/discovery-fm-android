@@ -1,4 +1,4 @@
-# 📻 Discovery FM - Радио и Подкасты
+# 📻 Discovery FM - Радио и АУДИОframes
 
 [![Version](https://img.shields.io/badge/version-1.1.0--b2-blue.svg)](https://github.com/DgekStr/discovery-fm-android)
 [![Platform](https://img.shields.io/badge/platform-Android-green.svg)](https://www.android.com/)
@@ -10,15 +10,15 @@
 <img width="202" height="450" alt="4" src="https://github.com/user-attachments/assets/4acc7dfb-212f-42eb-a77f-8b60bb624980" />
 
 
-Приложение для прослушивания онлайн-радио и подкастов Discovery FM.
+Приложение для прослушивания онлайн-радио и АУДИОframes Discovery FM.
 
 ---
 
 ## 📱 Особенности
 
 - 🎵 **Онлайн радио** - Слушайте эфир в реальном времени
-- 📚 **Категории подкастов** - Удобная навигация по подкастам
-- 🎧 **Воспроизведение подкастов** - С управлением прогрессом
+- 📚 **АУДИОframes** - Удобная навигация по АУДИОframes
+- 🎧 **Воспроизведение АУДИОframes** - С управлением прогрессом
 - 🎨 **Современный UI** - На основе Jetpack Compose
 - 📊 **Управление громкостью** - Ползунок громкости в плеере
 
@@ -47,3 +47,4 @@
 1. Клонируйте репозиторий:
 ```bash
 git clone https://github.com/DgekStr/discovery-fm-android.git
+```

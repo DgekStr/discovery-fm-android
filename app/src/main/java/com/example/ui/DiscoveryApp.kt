@@ -515,7 +515,7 @@ fun YouTubeStyleHeader(
                     fontSize = 18.sp
                 )
                 Text(
-                    text = "Радио и подкасты",
+                    text = "Радио и АУДИОframes",
                     style = MaterialTheme.typography.bodySmall,
                     color = Color.White.copy(alpha = 0.8f),
                     fontSize = 12.sp
@@ -914,7 +914,7 @@ fun CategoryCard(
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    text = "${category.shows.size} подкастов",
+                    text = "${category.shows.size} АУДИОframes",
                     fontSize = 13.sp,
                     color = Color.White.copy(alpha = 0.8f)
                 )

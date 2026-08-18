@@ -188,12 +188,12 @@ class DiscoveryViewModel(application: Application) : AndroidViewModel(applicatio
                     if (categories.isNotEmpty()) {
                         _podcastState.value = PodcastLoadState.Success(
                             categories = categories,
-                            message = "Загружено ${categories.size} категорий подкастов"
+                            message = "Загружено ${categories.size} АУДИОframes"
                         )
                     } else {
                         _podcastState.value = PodcastLoadState.Success(
                             categories = emptyList(),
-                            message = "Нет доступных подкастов",
+                            message = "Нет доступных АУДИОframes",
                             isFallback = true
                         )
                     }
