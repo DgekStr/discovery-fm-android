@@ -2,13 +2,16 @@
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -21,6 +24,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import coil.compose.AsyncImage
 import com.example.model.Show
 import ru.discoveryfm.player.R
@@ -29,6 +34,7 @@ import ru.discoveryfm.player.R
 @Composable
 fun PodcastPlayerScreen(
     show: Show,
+    categoryName: String = "",
     isPlaying: Boolean,
     isLoading: Boolean,
     currentPosition: Int,
@@ -39,11 +45,15 @@ fun PodcastPlayerScreen(
     onNext: () -> Unit,
     onPrevious: () -> Unit,
     onSeek: (Int) -> Unit,
+    onSearchClick: () -> Unit = {},
     onBack: () -> Unit
 ) {
     val currentTime = formatTime(currentPosition)
     val totalTime = formatTime(duration)
     val progress = if (duration > 0) currentPosition.toFloat() / duration.toFloat() else 0f
+
+    // === ДИАЛОГ С ОПИСАНИЕМ ===
+    var showDescriptionDialog by remember { mutableStateOf(false) }
 
     // === ИСПРАВЛЕНИЕ: ФОРМИРУЕМ URL КАРТИНКИ ===
     val imageUrl = if (show.imageUrl.isNotEmpty()) {
@@ -86,6 +96,15 @@ fun PodcastPlayerScreen(
                         Icon(Icons.Rounded.ArrowBack, contentDescription = "Назад")
                     }
                 },
+                actions = {
+                    IconButton(onClick = onSearchClick) {
+                        Icon(
+                            imageVector = Icons.Rounded.Search,
+                            contentDescription = "Поиск",
+                            tint = Color.White
+                        )
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primary,
                     titleContentColor = Color.White,
@@ -103,38 +122,79 @@ fun PodcastPlayerScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            // === ОБЛОЖКА ПОДКАСТА ===
-            if (imageUrl.isNotEmpty()) {
-                // Если есть обложка - показываем её
-                AsyncImage(
-                    model = imageUrl,
-                    contentDescription = "Обложка подкаста",
-                    modifier = Modifier
-                        .size(220.dp)
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f)),
-                    contentScale = ContentScale.Crop,
-                    placeholder = painterResource(id = R.drawable.logo),
-                    error = painterResource(id = R.drawable.logo),
-                    onError = {
-                        android.util.Log.e("PodcastPlayer", "❌ Ошибка загрузки картинки: $imageUrl")
-                    }
+            // === НАЗВАНИЕ КАТЕГОРИИ (над картинкой) ===
+            if (categoryName.isNotEmpty()) {
+                Text(
+                    text = categoryName.uppercase(),
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.primary,
+                    textAlign = TextAlign.Center,
+                    letterSpacing = 2.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(bottom = 12.dp)
                 )
-            } else {
-                // Если обложки нет - показываем заглушку с инициалами
-                Surface(
-                    shape = RoundedCornerShape(16.dp),
-                    color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f),
-                    modifier = Modifier.size(220.dp)
-                ) {
-                    Box(
-                        contentAlignment = Alignment.Center
+            }
+
+            // === ОБЛОЖКА ПОДКАСТА (кликабельная, с бейджем «i» для описания) ===
+            Box(
+                modifier = Modifier
+                    .size(220.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .clickable(enabled = show.description.isNotEmpty()) {
+                        showDescriptionDialog = true
+                    }
+            ) {
+                if (imageUrl.isNotEmpty()) {
+                    AsyncImage(
+                        model = imageUrl,
+                        contentDescription = "Обложка подкаста",
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f)),
+                        contentScale = ContentScale.Crop,
+                        placeholder = painterResource(id = R.drawable.logo),
+                        error = painterResource(id = R.drawable.logo),
+                        onError = {
+                            android.util.Log.e("PodcastPlayer", "❌ Ошибка загрузки картинки: $imageUrl")
+                        }
+                    )
+                } else {
+                    Surface(
+                        shape = RoundedCornerShape(16.dp),
+                        color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f),
+                        modifier = Modifier.fillMaxSize()
                     ) {
-                        Text(
-                            text = show.title.take(2).uppercase(),
-                            fontSize = 48.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
+                        Box(
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = show.title.take(2).uppercase(),
+                                fontSize = 48.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+                }
+
+                // === БЕЙДЖ «i» (если есть описание) ===
+                if (show.description.isNotEmpty()) {
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier
+                            .align(Alignment.BottomEnd)
+                            .padding(8.dp)
+                            .size(28.dp)
+                            .clip(CircleShape)
+                            .background(Color.Black.copy(alpha = 0.55f))
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.Info,
+                            contentDescription = "Описание",
+                            tint = Color.White,
+                            modifier = Modifier.size(18.dp)
                         )
                     }
                 }
@@ -286,6 +346,81 @@ fun PodcastPlayerScreen(
                         tint = if (isLast) Color.White.copy(alpha = 0.3f) else Color.White,
                         modifier = Modifier.size(32.dp)
                     )
+                }
+            }
+        }
+    }
+
+    // === ДИАЛОГ С ОПИСАНИЕМ ПОДКАСТА ===
+    if (showDescriptionDialog) {
+        Dialog(
+            onDismissRequest = { showDescriptionDialog = false },
+            properties = DialogProperties(dismissOnBackPress = true, dismissOnClickOutside = true)
+        ) {
+            Surface(
+                shape = RoundedCornerShape(24.dp),
+                color = MaterialTheme.colorScheme.surface,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(
+                    modifier = Modifier.padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    // Заголовок
+                    Text(
+                        text = show.cleanTitle,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        textAlign = TextAlign.Center,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    // Категория
+                    if (categoryName.isNotEmpty()) {
+                        Text(
+                            text = categoryName.uppercase(),
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.primary,
+                            letterSpacing = 1.5.sp,
+                            textAlign = TextAlign.Center
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                    } else {
+                        Spacer(modifier = Modifier.height(12.dp))
+                    }
+
+                    // Описание с красивым выравниванием и прокруткой
+                    Text(
+                        text = show.description,
+                        fontSize = 15.sp,
+                        lineHeight = 22.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Justify,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(max = 320.dp)      // сначала ограничиваем высоту
+                            .verticalScroll(rememberScrollState()) // затем скроллим внутри
+                    )
+
+                    Spacer(modifier = Modifier.height(20.dp))
+
+                    // Кнопка закрыть
+                    Button(
+                        onClick = { showDescriptionDialog = false },
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = "Закрыть",
+                            fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier.padding(vertical = 4.dp)
+                        )
+                    }
                 }
             }
         }

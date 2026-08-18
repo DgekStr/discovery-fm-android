@@ -31,6 +31,12 @@ sealed class PodcastLoadState {
     data class Error(val message: String) : PodcastLoadState()
 }
 
+/** Результат поиска: подкаст + название его категории */
+data class SearchResultItem(
+    val show: Show,
+    val categoryName: String
+)
+
 class DiscoveryViewModel(application: Application) : AndroidViewModel(application) {
     private val appContext = application.applicationContext
     private val nowPlayingRepository = NowPlayingRepository()
@@ -198,6 +204,44 @@ class DiscoveryViewModel(application: Application) : AndroidViewModel(applicatio
                 }
             }
         }
+    }
+
+    // === ПОИСК ПО ПОДКАСТАМ ===
+
+    /**
+     * Ищет подкасты по названию подкаста ИЛИ по названию категории (без учёта регистра,
+     * по частичному совпадению).
+     */
+    fun searchPodcasts(query: String): List<SearchResultItem> {
+        val q = query.trim()
+        if (q.isEmpty()) return emptyList()
+
+        val state = _podcastState.value
+        if (state !is PodcastLoadState.Success) return emptyList()
+
+        val lowerQ = q.lowercase()
+        val results = mutableListOf<SearchResultItem>()
+
+        for (category in state.categories) {
+            val catLower = category.name.lowercase()
+            for (show in category.shows) {
+                val titleLower = show.title.lowercase()
+                if (titleLower.contains(lowerQ) || catLower.contains(lowerQ)) {
+                    results.add(SearchResultItem(show = show, categoryName = category.name))
+                }
+            }
+        }
+        return results
+    }
+
+    /** Возвращает плейлист (подкасты категории) для воспроизведения из поиска */
+    fun getCategoryPlaylist(categoryName: String): List<Show> {
+        val state = _podcastState.value
+        if (state !is PodcastLoadState.Success) return emptyList()
+        return state.categories
+            .firstOrNull { it.name == categoryName }
+            ?.shows
+            ?: emptyList()
     }
 
     // === ИНФОРМАЦИЯ О ТЕКУЩЕМ ТРЕКЕ (РАДИО) ===

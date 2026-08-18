@@ -38,6 +38,7 @@ fun CategoryScreen(
     duration: Int = 0,
     onPlayPauseToggle: (Show) -> Unit,
     onPodcastClick: (Show) -> Unit,
+    onSearchClick: () -> Unit = {},
     onBack: () -> Unit
 ) {
     Scaffold(
@@ -55,6 +56,15 @@ fun CategoryScreen(
                         Icon(
                             imageVector = Icons.Rounded.ArrowBack,
                             contentDescription = "Назад"
+                        )
+                    }
+                },
+                actions = {
+                    IconButton(onClick = onSearchClick) {
+                        Icon(
+                            imageVector = Icons.Rounded.Search,
+                            contentDescription = "Поиск",
+                            tint = Color.White
                         )
                     }
                 },

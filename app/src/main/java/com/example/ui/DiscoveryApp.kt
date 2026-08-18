@@ -64,6 +64,7 @@ fun DiscoveryApp(
 
     var selectedCategory by remember { mutableStateOf<Category?>(null) }
     var selectedPodcast by remember { mutableStateOf<Show?>(null) }
+    var isSearchOpen by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         viewModel.loadPodcasts()
@@ -80,6 +81,35 @@ fun DiscoveryApp(
         }
     }
 
+    // === ЭКРАН ПОИСКА ===
+    if (isSearchOpen && selectedPodcast == null) {
+        SearchScreen(
+            onSearch = { query ->
+                if (query.isBlank()) emptyList()
+                else viewModel.searchPodcasts(query)
+            },
+            onPodcastClick = { result, playlist ->
+                // Находим категорию по названию
+                val state = podcastState
+                selectedCategory = if (state is PodcastLoadState.Success) {
+                    state.categories.firstOrNull { it.name == result.categoryName }
+                } else {
+                    null
+                }
+
+                // Если подкаст уже играет - не перезапускать
+                val isSamePlaying = podcastIsPlaying && currentPodcastTitle == result.show.title
+                if (!isSamePlaying) {
+                    viewModel.playPodcast(result.show, playlist)
+                }
+                selectedPodcast = result.show
+                isSearchOpen = false
+            },
+            onBack = { isSearchOpen = false }
+        )
+        return
+    }
+
     // === ЭКРАН ПЛЕЕРА ПОДКАСТА ===
     if (selectedPodcast != null) {
         val playlist = selectedCategory?.shows ?: emptyList()
@@ -87,6 +117,7 @@ fun DiscoveryApp(
 
         PodcastPlayerScreen(
             show = selectedPodcast!!,
+            categoryName = selectedCategory?.name ?: "",
             isPlaying = podcastIsPlaying && currentPodcastTitle == selectedPodcast!!.title,
             isLoading = podcastIsLoading,
             currentPosition = podcastCurrentPosition,
@@ -114,6 +145,10 @@ fun DiscoveryApp(
             },
             onSeek = { position ->
                 viewModel.seekPodcast(position)
+            },
+            onSearchClick = {
+                selectedPodcast = null
+                isSearchOpen = true
             },
             onBack = {
                 selectedPodcast = null
@@ -149,8 +184,18 @@ fun DiscoveryApp(
                     android.util.Log.d("DiscoveryApp", "🔄 Используем картинку категории: ${showWithImage.imageUrl}")
                 }
 
-                viewModel.playPodcast(showWithImage, playlist)
+                // Если этот подкаст уже играет — просто открываем плеер, не перезапуская
+                val isSamePlaying = podcastIsPlaying && currentPodcastTitle == showWithImage.title
+                if (!isSamePlaying) {
+                    viewModel.playPodcast(showWithImage, playlist)
+                } else {
+                    android.util.Log.d("DiscoveryApp", "🎧 Уже играет, не перезапускаем: ${show.title}")
+                }
                 selectedPodcast = showWithImage
+            },
+            onSearchClick = {
+                selectedCategory = null
+                isSearchOpen = true
             },
             onBack = { selectedCategory = null }
         )
@@ -167,6 +212,7 @@ fun DiscoveryApp(
                 },
                 themeMode = themeMode,
                 onThemeModeChange = { viewModel.setThemeMode(it) },
+                onSearchClick = { isSearchOpen = true },
                 isLoading = podcastState is PodcastLoadState.Loading
             )
         },
@@ -405,6 +451,7 @@ fun YouTubeStyleHeader(
     onRefreshClick: () -> Unit,
     themeMode: ThemeMode,
     onThemeModeChange: (ThemeMode) -> Unit,
+    onSearchClick: () -> Unit,
     isLoading: Boolean
 ) {
     // Следующий режим при нажатии: Системная → Светлая → Тёмная → Системная
@@ -499,6 +546,19 @@ fun YouTubeStyleHeader(
             Icon(
                 imageVector = Icons.Rounded.Refresh,
                 contentDescription = "Обновить",
+                tint = Color.White
+            )
+        }
+
+        IconButton(
+            onClick = onSearchClick,
+            modifier = Modifier
+                .testTag("search_button")
+                .minimumInteractiveComponentSize()
+        ) {
+            Icon(
+                imageVector = Icons.Rounded.Search,
+                contentDescription = "Поиск",
                 tint = Color.White
             )
         }
