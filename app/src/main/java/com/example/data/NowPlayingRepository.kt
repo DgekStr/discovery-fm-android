@@ -2,6 +2,7 @@ package com.example.data
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.net.HttpURLConnection
 import java.net.URL
 import org.json.JSONObject
 
@@ -10,9 +11,17 @@ class NowPlayingRepository {
     suspend fun fetchNowPlaying(): NowPlayingInfo? {
         return withContext(Dispatchers.IO) {
             try {
-                val url = URL("https://discoveryfm.ru/xml/cur_playing.txt")
-                val text = url.readText()
-                parseNowPlaying(text)
+                val connection = (URL("https://discoveryfm.ru/xml/cur_playing.txt").openConnection() as HttpURLConnection).apply {
+                    connectTimeout = 10_000
+                    readTimeout = 10_000
+                    requestMethod = "GET"
+                }
+                try {
+                    if (connection.responseCode !in 200..299) return@withContext null
+                    parseNowPlaying(connection.inputStream.bufferedReader(Charsets.UTF_8).use { it.readText() })
+                } finally {
+                    connection.disconnect()
+                }
             } catch (e: Exception) {
                 // В случае ошибки (нет интернета, сервер не отвечает) возвращаем null
                 null
@@ -52,7 +61,17 @@ class NowPlayingRepository {
                 val query = java.net.URLEncoder.encode(mainArtist, "UTF-8")
                 val url = URL("https://api.deezer.com/search/artist?q=$query&limit=1")
 
-                val text = url.readText()
+                val connection = (url.openConnection() as HttpURLConnection).apply {
+                    connectTimeout = 10_000
+                    readTimeout = 10_000
+                    requestMethod = "GET"
+                }
+                val text = try {
+                    if (connection.responseCode !in 200..299) return@withContext null
+                    connection.inputStream.bufferedReader(Charsets.UTF_8).use { it.readText() }
+                } finally {
+                    connection.disconnect()
+                }
                 val json = JSONObject(text)
                 val data = json.optJSONArray("data")
                 if (data != null && data.length() > 0) {

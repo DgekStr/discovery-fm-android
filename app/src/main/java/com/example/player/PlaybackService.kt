@@ -133,11 +133,13 @@ class PlaybackService : Service() {
             ACTION_PLAY_PODCAST -> {
                 val show = intent.getParcelableExtra<Show>(EXTRA_SHOW)
                 val list = intent.getParcelableArrayListExtra<Show>(EXTRA_PLAYLIST) ?: emptyList()
-                if (show != null) playPodcast(show, list)
+                if (show != null && show.audioUrl.startsWith("https://") && list.size <= 500) {
+                    playPodcast(show, list)
+                }
             }
             ACTION_STOP -> stopPlayback()
         }
-        return START_STICKY
+        return START_NOT_STICKY
     }
 
     // === УПРАВЛЕНИЕ РАДИО ===

@@ -2,10 +2,12 @@ package com.example.data
 
 import com.example.model.Category
 import com.example.model.Show
+import ru.discoveryfm.player.BuildConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
+import java.net.HttpURLConnection
 import java.net.URL
 
 class PodcastRepository {
@@ -14,11 +16,19 @@ class PodcastRepository {
     suspend fun fetchPodcasts(onProgress: ((Int) -> Unit)? = null): List<Category> {
         return withContext(Dispatchers.IO) {
             try {
-                val jsonString = URL(apiUrl)
-                    .openConnection()
-                    .getInputStream()
-                    .bufferedReader(Charsets.UTF_8)
-                    .use { it.readText() }
+                val connection = (URL(apiUrl).openConnection() as HttpURLConnection).apply {
+                    connectTimeout = 10_000
+                    readTimeout = 15_000
+                    requestMethod = "GET"
+                }
+                val jsonString = try {
+                    if (connection.responseCode !in 200..299) {
+                        error("Podcast API HTTP ${connection.responseCode}")
+                    }
+                    connection.inputStream.bufferedReader(Charsets.UTF_8).use { reader -> reader.readText() }
+                } finally {
+                    connection.disconnect()
+                }
                 val jsonObject = JSONObject(jsonString)
 
                 if (!jsonObject.getBoolean("success")) {
@@ -60,8 +70,10 @@ class PodcastRepository {
                         categoryImage
                     }
 
-                    android.util.Log.d("PodcastRepo", "🏷️ Категория: $categoryName")
-                    android.util.Log.d("PodcastRepo", "🖼️ Картинка категории: $finalCategoryImage")
+                    if (BuildConfig.DEBUG) {
+                        android.util.Log.d("PodcastRepo", "🏷️ Категория: $categoryName")
+                        android.util.Log.d("PodcastRepo", "🖼️ Картинка категории: $finalCategoryImage")
+                    }
 
                     val shows = mutableListOf<Show>()
                     val totalPodcasts = podcastsArray.length()
@@ -111,11 +123,13 @@ class PodcastRepository {
                             imageUrl = "https://discoveryfm.ru/$cleanPath"
                         }
 
-                        android.util.Log.d(
-                            "PodcastRepo",
-                            "  📦 АУДИОframes: ${item.getString("title")}"
-                        )
-                        android.util.Log.d("PodcastRepo", "  🖼️ imageUrl: $imageUrl")
+                        if (BuildConfig.DEBUG) {
+                            android.util.Log.d(
+                                "PodcastRepo",
+                                "  📦 АУДИОframes: ${item.getString("title")}"
+                            )
+                            android.util.Log.d("PodcastRepo", "  🖼️ imageUrl: $imageUrl")
+                        }
 
                         shows.add(
                             Show(
@@ -147,14 +161,14 @@ class PodcastRepository {
                 result
 
             } catch (e: Exception) {
-                e.printStackTrace()
+                if (BuildConfig.DEBUG) e.printStackTrace()
                 onProgress?.invoke(100)
                 getFallbackCategories()
             }
         }
     }
 
-    private fun parseDurationToSeconds(durationStr: String): Int {
+    internal fun parseDurationToSeconds(durationStr: String): Int {
         if (durationStr.isEmpty()) return 0
         return try {
             val parts = durationStr.split(":")

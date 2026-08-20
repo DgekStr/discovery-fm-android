@@ -73,12 +73,10 @@ fun PodcastPlayerScreen(
         ""
     }
 
-    // Отладка - проверяем URL картинки
-    android.util.Log.d("PodcastPlayer", "========================================")
-    android.util.Log.d("PodcastPlayer", "🎵 Подкаст: ${show.title}")
-    android.util.Log.d("PodcastPlayer", "🖼️ show.imageUrl: '${show.imageUrl}'")
-    android.util.Log.d("PodcastPlayer", "🖼️ final imageUrl: '$imageUrl'")
-    android.util.Log.d("PodcastPlayer", "========================================")
+    // Подробные данные URL не логируются в release-сборке
+    if (ru.discoveryfm.player.BuildConfig.DEBUG) {
+        android.util.Log.d("PodcastPlayer", "Обложка загружена для: ${show.title}")
+    }
 
     Scaffold(
         topBar = {
@@ -157,7 +155,9 @@ fun PodcastPlayerScreen(
                         placeholder = painterResource(id = R.drawable.logo),
                         error = painterResource(id = R.drawable.logo),
                         onError = {
-                            android.util.Log.e("PodcastPlayer", "❌ Ошибка загрузки картинки: $imageUrl")
+                            if (ru.discoveryfm.player.BuildConfig.DEBUG) {
+                                android.util.Log.e("PodcastPlayer", "Ошибка загрузки картинки")
+                            }
                         }
                     )
                 } else {

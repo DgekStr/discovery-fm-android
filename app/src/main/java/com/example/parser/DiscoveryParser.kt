@@ -2,6 +2,7 @@ package com.example.parser
 
 import android.util.Log
 import com.example.model.Category
+import ru.discoveryfm.player.BuildConfig
 import com.example.model.Show
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
@@ -67,7 +68,7 @@ object DiscoveryParser {
 
     fun fetchAndParse(): List<Category> {
         try {
-            Log.d(TAG, "Connecting to $TARGET_URL for parsing...")
+            if (BuildConfig.DEBUG) Log.d(TAG, "Connecting to parser endpoint")
             
             val doc: Document = Jsoup.connect(TARGET_URL)
                 .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36")
@@ -146,14 +147,14 @@ object DiscoveryParser {
                 .distinctBy { it.name }
 
             if (finalCategories.isNotEmpty()) {
-                Log.d(TAG, "Successfully parsed ${finalCategories.size} categories with Jsoup!")
+                if (BuildConfig.DEBUG) Log.d(TAG, "Parsed ${finalCategories.size} categories")
                 return finalCategories
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Exception during Jsoup parsing of $TARGET_URL", e)
+            if (BuildConfig.DEBUG) Log.e(TAG, "Parser exception", e)
         }
 
-        Log.w(TAG, "Parsing returned empty result or failed. Fallback will be used.")
+        if (BuildConfig.DEBUG) Log.w(TAG, "Parser returned empty result")
         return emptyList()
     }
 }

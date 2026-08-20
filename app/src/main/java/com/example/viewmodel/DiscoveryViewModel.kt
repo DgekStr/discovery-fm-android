@@ -270,7 +270,9 @@ class DiscoveryViewModel(application: Application) : AndroidViewModel(applicatio
                         artist = artist,
                         title = title
                     )
-                    android.util.Log.d("NowPlaying", "Загружено: $artist - $title")
+                    if (ru.discoveryfm.player.BuildConfig.DEBUG) {
+                        android.util.Log.d("NowPlaying", "Загружено: $artist - $title")
+                    }
                 }
 
                 // === ФОТО ИСПОЛНИТЕЛЯ (Deezer) ===
@@ -292,7 +294,9 @@ class DiscoveryViewModel(application: Application) : AndroidViewModel(applicatio
 
                         withContext(Dispatchers.Main) {
                             _artistImageUrl.value = imageUrl
-                            android.util.Log.d("NowPlaying", "Фото артиста: $imageUrl")
+                            if (ru.discoveryfm.player.BuildConfig.DEBUG) {
+                                android.util.Log.d("NowPlaying", "Фото артиста загружено")
+                            }
                         }
                     }
                 }
@@ -302,7 +306,9 @@ class DiscoveryViewModel(application: Application) : AndroidViewModel(applicatio
                         artist = "Неизвестно",
                         title = "Ошибка: ${e.message}"
                     )
-                    android.util.Log.e("NowPlaying", "Ошибка загрузки: ${e.message}")
+                    if (ru.discoveryfm.player.BuildConfig.DEBUG) {
+                        android.util.Log.e("NowPlaying", "Ошибка загрузки: ${e.message}")
+                    }
                 }
             }
         }
@@ -311,7 +317,9 @@ class DiscoveryViewModel(application: Application) : AndroidViewModel(applicatio
     // === УПРАВЛЕНИЕ ПОДКАСТАМИ ===
     fun playPodcast(show: Show, playlist: List<Show>) {
         if (show.audioUrl.isEmpty()) {
-            android.util.Log.e("Podcast", "Нет аудио для: ${show.title}")
+            if (ru.discoveryfm.player.BuildConfig.DEBUG) {
+                android.util.Log.e("Podcast", "Нет аудио для выбранного аудиоframe")
+            }
             return
         }
 

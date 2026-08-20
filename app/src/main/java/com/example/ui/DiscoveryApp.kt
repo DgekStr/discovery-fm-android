@@ -182,15 +182,15 @@ fun DiscoveryApp(
             onPodcastClick = { show ->
                 val playlist = selectedCategory?.shows ?: emptyList()
 
-                // Логируем для отладки
-                android.util.Log.d("DiscoveryApp", "📱 Клик по подкасту: ${show.title}")
-                android.util.Log.d("DiscoveryApp", "🖼️ imageUrl: ${show.imageUrl}")
+                // Логи клика доступны только в debug-сборке
 
                 // Если у подкаста нет картинки, пробуем взять из категории
                 var showWithImage = show
                 if (show.imageUrl.isEmpty() && selectedCategory?.imageUrl?.isNotEmpty() == true) {
                     showWithImage = show.copy(imageUrl = selectedCategory!!.imageUrl)
-                    android.util.Log.d("DiscoveryApp", "🔄 Используем картинку категории: ${showWithImage.imageUrl}")
+                    if (ru.discoveryfm.player.BuildConfig.DEBUG) {
+                        android.util.Log.d("DiscoveryApp", "🔄 Используем картинку категории")
+                    }
                 }
 
                 // Если этот подкаст уже играет — просто открываем плеер, не перезапуская
@@ -198,7 +198,9 @@ fun DiscoveryApp(
                 if (!isSamePlaying) {
                     viewModel.playPodcast(showWithImage, playlist)
                 } else {
-                    android.util.Log.d("DiscoveryApp", "🎧 Уже играет, не перезапускаем: ${show.title}")
+                    if (ru.discoveryfm.player.BuildConfig.DEBUG) {
+                        android.util.Log.d("DiscoveryApp", "Уже играет, не перезапускаем")
+                    }
                 }
                 selectedPodcast = showWithImage
             },
@@ -877,7 +879,9 @@ fun CategoryCard(
         ) {
             // === ОТОБРАЖЕНИЕ КАРТИНКИ КАТЕГОРИИ ===
             if (category.imageUrl.isNotEmpty()) {
-                android.util.Log.d("CategoryCard", "🖼️ Загрузка картинки: ${category.imageUrl}")
+                if (ru.discoveryfm.player.BuildConfig.DEBUG) {
+                    android.util.Log.d("CategoryCard", "Загрузка картинки категории")
+                }
                 AsyncImage(
                     model = category.imageUrl,  // <-- УЖЕ ПОЛНЫЙ URL
                     contentDescription = category.name,
@@ -888,7 +892,9 @@ fun CategoryCard(
                     placeholder = painterResource(id = R.drawable.logo),
                     error = painterResource(id = R.drawable.logo),
                     onError = {
-                        android.util.Log.e("CategoryCard", "❌ Ошибка загрузки: ${category.imageUrl}")
+                        if (ru.discoveryfm.player.BuildConfig.DEBUG) {
+                            android.util.Log.e("CategoryCard", "Ошибка загрузки картинки категории")
+                        }
                     }
                 )
                 Spacer(modifier = Modifier.width(16.dp))

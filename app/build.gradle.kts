@@ -24,15 +24,12 @@ android {
 
   signingConfigs {
     create("release") {
-      val keystorePath = System.getenv("KEYSTORE_PATH") ?: "${rootDir}/my-upload-key.jks"
-      storeFile = file(keystorePath)
-      // Берём пароли из gradle.properties (через project.properties)
-      storePassword = project.properties["STORE_PASSWORD"] as? String ?: System.getenv("STORE_PASSWORD")
-      keyAlias = "upload"
-      keyPassword = project.properties["KEY_PASSWORD"] as? String ?: System.getenv("KEY_PASSWORD")
+      val keystorePath = System.getenv("KEYSTORE_PATH")
+      if (!keystorePath.isNullOrBlank()) storeFile = file(keystorePath)
+      storePassword = System.getenv("STORE_PASSWORD")
+      keyAlias = System.getenv("KEY_ALIAS")
+      keyPassword = System.getenv("KEY_PASSWORD")
 
-      // Подпись v1 (JAR) + v2 — требуется для установки
-      // на Xiaomi/HyperOS и старых Android-устройств
       enableV1Signing = true
       enableV2Signing = true
     }
@@ -50,11 +47,10 @@ android {
   buildTypes {
     release {
       isCrunchPngs = false
-      isMinifyEnabled = false
+      isMinifyEnabled = true
+      isShrinkResources = true
       proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-      // Подпись debug-ключом для распространения APK напрямую
-      // (Android 16 отклоняет самоподписанные сертификаты без v1)
-      signingConfig = signingConfigs.getByName("debugConfig")
+      signingConfig = signingConfigs.getByName("release")
     }
     debug {
       signingConfig = signingConfigs.getByName("debugConfig")

@@ -2,6 +2,7 @@ package com.example.player
 
 import android.content.Context
 import android.media.MediaPlayer
+import ru.discoveryfm.player.BuildConfig
 import android.os.Handler
 import android.os.Looper
 import kotlinx.coroutines.*
@@ -34,7 +35,9 @@ class PodcastPlayerManager(private val context: Context) {
 
     // === МЕТОДЫ ===
     fun play(audioUrl: String, podcastTitle: String) {
-        android.util.Log.d("PodcastPlayer", "Play called: $podcastTitle, URL: $audioUrl")
+        if (BuildConfig.DEBUG) {
+            android.util.Log.d("PodcastPlayer", "Play called: $podcastTitle")
+        }
 
         if (_currentPodcast.value == podcastTitle && _isPlaying.value) {
             pause()
@@ -47,7 +50,7 @@ class PodcastPlayerManager(private val context: Context) {
         }
 
         if (audioUrl.isEmpty()) {
-            android.util.Log.e("PodcastPlayer", "URL пустой!")
+            if (BuildConfig.DEBUG) android.util.Log.e("PodcastPlayer", "URL пустой!")
             return
         }
 
@@ -64,7 +67,7 @@ class PodcastPlayerManager(private val context: Context) {
         try {
             mediaPlayer = MediaPlayer().apply {
                 setOnPreparedListener { mp ->
-                    android.util.Log.d("PodcastPlayer", "MediaPlayer prepared, duration: ${mp.duration}")
+                    if (BuildConfig.DEBUG) android.util.Log.d("PodcastPlayer", "MediaPlayer prepared, duration: ${mp.duration}")
                     _duration.value = mp.duration
                     _isLoading.value = false
                     _isPlaying.value = true
@@ -73,7 +76,7 @@ class PodcastPlayerManager(private val context: Context) {
                 }
 
                 setOnErrorListener { _, what, extra ->
-                    android.util.Log.e("PodcastPlayer", "Error: what=$what, extra=$extra")
+                    if (BuildConfig.DEBUG) android.util.Log.e("PodcastPlayer", "Error: what=$what, extra=$extra")
                     _isLoading.value = false
                     _isPlaying.value = false
                     _currentPodcast.value = null
@@ -81,7 +84,7 @@ class PodcastPlayerManager(private val context: Context) {
                 }
 
                 setOnCompletionListener {
-                    android.util.Log.d("PodcastPlayer", "Playback completed")
+                    if (BuildConfig.DEBUG) android.util.Log.d("PodcastPlayer", "Playback completed")
                     _isPlaying.value = false
                     stopPositionUpdater()
                     _currentPosition.value = _duration.value
@@ -94,22 +97,22 @@ class PodcastPlayerManager(private val context: Context) {
                 } else {
                     audioUrl
                 }
-                android.util.Log.d("PodcastPlayer", "Final URL: $finalUrl")
+                if (BuildConfig.DEBUG) android.util.Log.d("PodcastPlayer", "Final URL host: ${android.net.Uri.parse(finalUrl).host}")
 
                 setDataSource(finalUrl)
                 prepareAsync()
             }
         } catch (e: IOException) {
-            android.util.Log.e("PodcastPlayer", "IOException: ${e.message}")
+            if (BuildConfig.DEBUG) android.util.Log.e("PodcastPlayer", "IOException: ${e.message}")
             handleError()
         } catch (e: Exception) {
-            android.util.Log.e("PodcastPlayer", "Exception: ${e.message}")
+            if (BuildConfig.DEBUG) android.util.Log.e("PodcastPlayer", "Exception: ${e.message}")
             handleError()
         }
     }
 
     fun pause() {
-        android.util.Log.d("PodcastPlayer", "Pause called")
+        if (BuildConfig.DEBUG) android.util.Log.d("PodcastPlayer", "Pause called")
         mediaPlayer?.let {
             if (it.isPlaying) {
                 it.pause()
@@ -120,7 +123,7 @@ class PodcastPlayerManager(private val context: Context) {
     }
 
     fun resume() {
-        android.util.Log.d("PodcastPlayer", "Resume called")
+        if (BuildConfig.DEBUG) android.util.Log.d("PodcastPlayer", "Resume called")
         mediaPlayer?.let {
             if (!it.isPlaying && _currentPodcast.value != null) {
                 it.start()
@@ -139,7 +142,7 @@ class PodcastPlayerManager(private val context: Context) {
     }
 
     fun stop() {
-        android.util.Log.d("PodcastPlayer", "Stop called")
+        if (BuildConfig.DEBUG) android.util.Log.d("PodcastPlayer", "Stop called")
         stopPositionUpdater()
         mediaPlayer?.apply {
             if (isPlaying) {
@@ -156,7 +159,7 @@ class PodcastPlayerManager(private val context: Context) {
     }
 
     fun release() {
-        android.util.Log.d("PodcastPlayer", "Release called")
+        if (BuildConfig.DEBUG) android.util.Log.d("PodcastPlayer", "Release called")
         stopPositionUpdater()
         mediaPlayer?.release()
         mediaPlayer = null
