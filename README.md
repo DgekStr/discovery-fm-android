@@ -1,6 +1,6 @@
 # 📻 Discovery FM - Радио и АУДИОframes
 
-[![Version](https://img.shields.io/badge/version-1.1.0--b2-blue.svg)](https://github.com/DgekStr/discovery-fm-android)
+[![Version](https://img.shields.io/badge/version-1.3.0-blue.svg)](https://github.com/DgekStr/discovery-fm-android)
 [![Platform](https://img.shields.io/badge/platform-Android-green.svg)](https://www.android.com/)
 [![Kotlin](https://img.shields.io/badge/Kotlin-2.0.0-purple.svg)](https://kotlinlang.org/)
 
